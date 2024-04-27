@@ -20,7 +20,9 @@ async function requestText(details) {
         method: 'POST',
         body: JSON.stringify(details)
     })
-    return (await response.json()).content
+    let out = (await response.json()).content
+    console.trace("LLM returned: \n" + out);
+    return out
 }
 
 /**
@@ -262,3 +264,136 @@ async function generatePlayerWeapon() {
     return enemyFromString(playerWeaponStr) || playerWeaponExamples[0];
 }
 
+let gamestate = {
+    "player": {
+        "weapon": playerWeaponExamples[0],
+        "health": 10,
+    },
+    "enemy": {
+        "what": enemyExamples[0],
+        "health": 5,
+    },
+    "combatHistory": []
+}
+
+let exampleCombatHistory = `
+Player used Rejuvenate!
+You feel refreshed, ready to continue fighting.
+Player healed 3 damage
+
+Snake used Sneak!
+The snake slithers about, into the bushes. You have a hard time seeing it.
+
+Player used Air Blast!
+The snake was unable to avoid the large area of the attack, and is knocked back.
+Snake took 4 damage
+
+Player Health: 13
+Player Equipment:
+Staff of Nature
+This magical staff combines the powers of life and death into one.
+* Rejuvenate: refill some health
+* Poison Flames: moderate damage, more sensitive to elemental resistance/weakness
+* Air Blast: moderate damage in a large area
+
+Enemy Health: 1
+Enemy info:
+Snake
+This creature hisses at you, trying to get you to leave.
+* Sneak: become harder to hit until next attack
+* Venomous Bite: moderate damage
+
+`;
+
+function gamestateToString() {
+    let out = "";
+    for (item of gamestate.combatHistory) {
+        out += item.who + " used " + item.what + "!\n";
+        out += item.outcome + '\n';
+        for (damage of item.damages) {
+            out += damage.who + " took " + damage.amount + " damage\n";
+        }
+    }
+    out += '\n';
+
+    out += "Player health: " + gamestate.player.health;
+    out += "Player equipment: \n" + gamestate.player.weapon;
+    out += '\n';
+    out += "Enemy health: " + gamestate.enemy.health;
+    out += "Enemy info: \n" + gamestate.enemy.what;
+    out += '\n';
+}
+
+/**
+ * @param {String} str
+ */
+function gameEventFromString(str) {
+    let lines = str.trim().split('\n');
+    if (lines.length < 2) {
+        console.warn("LLM likely generated incorrect format\n" + str);
+        return null;
+    }
+
+    out = {};
+
+    if (!lines[0].match(" used ")) {
+        console.warn("LLM likely generated incorrect format\n" + str);
+        return null;
+    }
+    
+    out.who = lines[0].split(" used ")[1];
+    out.who = out.who.substring(0, out.who.indexOf("!"));
+
+    out.outcome = lines[1].trim();
+
+    out.damages = [];
+    for (let i = 2; i < lines.length; i++) {
+        damage = {};
+        damage.who = lines[i].split(" ")[0];
+        damage.amount = Number(lines[i].match(/[0-9]+/)[0]);
+        if (lines[i].match("heal")) damage.amount *= -1;
+        out.damages.push(damage);
+    }
+
+    return out;
+}
+
+async function generateEnemyAttack() {
+    let prompt = "";
+    prompt += INSTRUCTION_PREFIX;
+    prompt += "The following is an example of a combat log:\n";
+    prompt += exampleCombatHistory;
+    prompt += "Here is a log of our current game:\n"
+    prompt += gamestateToString();
+    prompt += "Please generate a possible move for the enemy to make, in the same format as above (move name, description, damage/heal amounts, each on their own line).";
+    prompt += RESPONSE_PREFIX;
+
+    let attackStr = ""
+
+    attackStr += gamestate.enemy.what.name + " used";
+    possibleAttacksGrammar = '(' + gamestate.enemy.what.abilities.map(
+        (ability) => '"' + ability.name + '"'
+    ).join("|") + ')';
+    attackStr += await requestText({
+        prompt: prompt+attackStr,
+        n_predict: 20,
+        grammar: "root ::= \" \" " + possibleAttacksGrammar + " \"!\\n\"",
+    })
+
+    attackStr += await requestText({
+        prompt: prompt+attackStr,
+        n_predict: 100,
+        grammar: "root ::= [a-zA-Z ,.']+\"\\n\"",
+        temperature: 0.6,
+    });
+
+    let optionalDamageNumbers = attackStr.match(/[Dd]amage/)? "":"?";
+    attackStr += await requestText({
+        prompt: prompt+attackStr,
+        grammar: "root ::= (\"Player \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")" + optionalDamageNumbers + "(\"Enemy \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")?\"\\n\"",
+    });
+
+    console.log(attackStr);
+
+    return gameEventFromString(attackStr);
+}
