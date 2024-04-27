@@ -1,0 +1,64 @@
+.main-body {
+  /* flexbox */
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 50px;
+}
+
+.health-points {
+  flex: 1 0;
+}
+
+/* id */
+#chatbox-container {
+  width: 25%;
+
+  /* flexbox */
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+}
+
+#chatbox {
+  border: 1px solid grey;
+  flex-grow: 1;
+  height: 88vh;
+  font-family:'Times New Roman', Times, serif;
+  overflow: auto;
+  overflow-y: scroll;
+}
+
+#fightscreen {
+  width: 75%;
+  height: 88vh;
+  flex-grow: 3;
+
+  /* flexbox */
+  display: flex;
+  flex-direction: column;
+}
+
+#boss-container {
+  flex: 1 0;
+  text-align: center;
+
+  /* flexbox */
+  display: flex;
+}
+
+#boss {
+  flex: 2 0;
+}
+
+#player-container {
+  flex: 1 0;
+  text-align: center;
+
+  /* flexbox */
+  display: flex;
+}
+
+#player {
+  flex: 2 0;
+}
