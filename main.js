@@ -1,7 +1,7 @@
 
 // for mistral:
 const INSTRUCTION_PREFIX = "[INST] "
-const RESPONSE_PREFIX = " [\INST]\n"
+const RESPONSE_PREFIX = " [\\INST]\n"
 
 /**
 // for others:
@@ -384,13 +384,14 @@ async function generateEnemyAttack() {
         prompt: prompt+attackStr,
         n_predict: 100,
         grammar: "root ::= [a-zA-Z ,.']+\"\\n\"",
-        temperature: 0.6,
+        temperature: 0.9,
     });
 
     let optionalDamageNumbers = attackStr.match(/[Dd]amage/)? "":"?";
     attackStr += await requestText({
         prompt: prompt+attackStr,
         grammar: "root ::= (\"Player \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")" + optionalDamageNumbers + "(\"Enemy \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")?\"\\n\"",
+        temperature: 0.2,
     });
 
     console.log(attackStr);
