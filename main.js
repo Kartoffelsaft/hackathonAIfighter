@@ -264,6 +264,36 @@ async function generatePlayerWeapon() {
     return enemyFromString(playerWeaponStr) || playerWeaponExamples[0];
 }
 
+/**
+ * @typedef {Object} Player
+ * @property {PlayerWeapon} weapon
+ * @property {Number} health
+ */
+/**
+ * @typedef {Object} EnemyInstance
+ * @property {Enemy} what
+ * @property {Number} health
+ */
+/**
+ * @typedef {Object} Damage
+ * @typedef {String} who
+ * @typedef {Number} amount
+ */
+/**
+ * @typedef {Object} CombatEvent
+ * @property {String} who
+ * @property {String} what
+ * @property {String} outcome
+ * @property {[Damage]} damages
+ */
+/**
+ * @typedef {Object} GameState
+ * @property {Player} player
+ * @property {EnemyInstance} enemy
+ * @property {[CombatEvent]} combatHistory
+ */
+
+/** @type {GameState} */
 let gamestate = {
     "player": {
         "weapon": playerWeaponExamples[0],
@@ -305,6 +335,9 @@ This creature hisses at you, trying to get you to leave.
 
 `;
 
+/**
+ * @returns {String}
+ */
 function gamestateToString() {
     let out = "";
     for (item of gamestate.combatHistory) {
@@ -326,14 +359,16 @@ function gamestateToString() {
 
 /**
  * @param {String} str
+ * @returns {CombatEvent}
  */
-function gameEventFromString(str) {
+function combatEventFromString(str) {
     let lines = str.trim().split('\n');
     if (lines.length < 2) {
         console.warn("LLM likely generated incorrect format\n" + str);
         return null;
     }
 
+    /** @type {CombatEvent} */
     out = {};
 
     if (!lines[0].match(" used ")) {
@@ -348,6 +383,7 @@ function gameEventFromString(str) {
 
     out.damages = [];
     for (let i = 2; i < lines.length; i++) {
+        /** @type {Damage} */
         damage = {};
         damage.who = lines[i].split(" ")[0];
         damage.amount = Number(lines[i].match(/[0-9]+/)[0]);
@@ -358,6 +394,9 @@ function gameEventFromString(str) {
     return out;
 }
 
+/**
+ * @returns {CombatEvent}
+ */
 async function generateEnemyAttack() {
     let prompt = "";
     prompt += INSTRUCTION_PREFIX;
@@ -396,11 +435,12 @@ async function generateEnemyAttack() {
 
     console.log(attackStr);
 
-    return gameEventFromString(attackStr);
+    return combatEventFromString(attackStr);
 }
 
 /**
  * @param {String} what
+ * @returns {CombatEvent}
  */
 async function generatePlayerAttack(what) {
     let isValidAbility = false
@@ -444,5 +484,5 @@ async function generatePlayerAttack(what) {
 
     console.log(attackStr);
 
-    return gameEventFromString(attackStr);
+    return combatEventFromString(attackStr);
 }
