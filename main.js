@@ -153,26 +153,30 @@ async function generateEnemy() {
 
     let enemyStr = "";
 
-    enemyStr += await requestText({
-        prompt: prompt+enemyStr,
-        n_predict: 20,
-        grammar: "root ::= [0-9a-zA-Z ]+\"\\n\"",
-        temperature: 1.1,
-    });
-    console.log("Generating " + enemyStr);
-    enemyStr += await requestText({
-        prompt: prompt+enemyStr,
-        n_predict: 100,
-        grammar: "root ::= [0-9a-zA-Z ,.]+\"\\n\"",
-        temperature: 0.6,
-    });
-    enemyStr += await requestText({
-        prompt: prompt+enemyStr,
-        n_predict: 100,
-        grammar: "root ::= (\"* \"[0-9a-zA-Z ]+\": \"[0-9a-zA-Z ]+\"\\n\")+\"\\n\"",
-    });
+    try {
+        enemyStr += await requestText({
+            prompt: prompt+enemyStr,
+            n_predict: 20,
+            grammar: "root ::= [0-9a-zA-Z ]+\"\\n\"",
+            temperature: 1.1,
+        });
+        console.log("Generating " + enemyStr);
+        enemyStr += await requestText({
+            prompt: prompt+enemyStr,
+            n_predict: 100,
+            grammar: "root ::= [0-9a-zA-Z ,.]+\"\\n\"",
+            temperature: 0.6,
+        });
+        enemyStr += await requestText({
+            prompt: prompt+enemyStr,
+            n_predict: 100,
+            grammar: "root ::= (\"* \"[0-9a-zA-Z ]+\": \"[0-9a-zA-Z ]+\"\\n\")+\"\\n\"",
+        });
 
-    return enemyFromString(enemyStr) || enemyExamples[0];
+        return enemyFromString(enemyStr) || enemyExamples[0];
+    } catch {
+        return enemyExamples[0];
+    }
 }
 
 /** @type {[PlayerWeapon]} */
@@ -242,26 +246,30 @@ async function generatePlayerWeapon() {
 
     let playerWeaponStr = "";
 
-    playerWeaponStr += await requestText({
-        prompt: prompt+playerWeaponStr,
-        n_predict: 20,
-        grammar: "root ::= [0-9a-zA-Z ']+\"\\n\"",
-        temperature: 1.4,
-    });
-    console.log("Generating " + playerWeaponStr);
-    playerWeaponStr += await requestText({
-        prompt: prompt+playerWeaponStr,
-        n_predict: 100,
-        grammar: "root ::= [0-9a-zA-Z ,.']+\"\\n\"",
-        temperature: 0.6,
-    });
-    playerWeaponStr += await requestText({
-        prompt: prompt+playerWeaponStr,
-        n_predict: 100,
-        grammar: "root ::= (\"* \"[0-9a-zA-Z ]+\": \"[0-9a-zA-Z ]+\"\\n\")+\"\\n\"",
-    });
+    try {
+        playerWeaponStr += await requestText({
+            prompt: prompt+playerWeaponStr,
+            n_predict: 20,
+            grammar: "root ::= [0-9a-zA-Z ']+\"\\n\"",
+            temperature: 1.4,
+        });
+        console.log("Generating " + playerWeaponStr);
+        playerWeaponStr += await requestText({
+            prompt: prompt+playerWeaponStr,
+            n_predict: 100,
+            grammar: "root ::= [0-9a-zA-Z ,.']+\"\\n\"",
+            temperature: 0.6,
+        });
+        playerWeaponStr += await requestText({
+            prompt: prompt+playerWeaponStr,
+            n_predict: 100,
+            grammar: "root ::= (\"* \"[0-9a-zA-Z ]+\": \"[0-9a-zA-Z ]+\"\\n\")+\"\\n\"",
+        });
 
-    return enemyFromString(playerWeaponStr) || playerWeaponExamples[0];
+        return enemyFromString(playerWeaponStr) || playerWeaponExamples[0];
+    } catch {
+        return playerWeaponExamples[0];
+    }
 }
 
 /**
@@ -316,7 +324,7 @@ The snake slithers about, into the bushes. You have a hard time seeing it.
 
 Player used Air Blast!
 The snake was unable to avoid the large area of the attack, and is knocked back.
-Snake took 4 damage
+Enemy took 4 damage
 
 Player Health: 13
 Player Equipment:
@@ -394,6 +402,17 @@ function combatEventFromString(str) {
     return out;
 }
 
+
+/** @type {CombatEvent} */
+const defaultEnemyAttack = {
+    "who": "Enemy",
+    "what": "Unknown Attack",
+    "outcome": "Some issue with the LLM probably",
+    "damages": [{
+        "who": "Player",
+        "amount": 1,
+    }],
+}
 /**
  * @returns {CombatEvent}
  */
@@ -409,35 +428,47 @@ async function generateEnemyAttack() {
 
     let attackStr = ""
 
-    attackStr += gamestate.enemy.what.name + " used";
-    possibleAttacksGrammar = '(' + gamestate.enemy.what.abilities.map(
-        (ability) => '"' + ability.name + '"'
-    ).join("|") + ')';
-    attackStr += await requestText({
-        prompt: prompt+attackStr,
-        n_predict: 20,
-        grammar: "root ::= \" \" " + possibleAttacksGrammar + " \"!\\n\"",
-    })
+    try {
+        attackStr += gamestate.enemy.what.name + " used";
+        possibleAttacksGrammar = '(' + gamestate.enemy.what.abilities.map(
+            (ability) => '"' + ability.name + '"'
+        ).join("|") + ')';
+        attackStr += await requestText({
+            prompt: prompt+attackStr,
+            n_predict: 20,
+            grammar: "root ::= \" \" " + possibleAttacksGrammar + " \"!\\n\"",
+        })
 
-    attackStr += await requestText({
-        prompt: prompt+attackStr,
-        n_predict: 100,
-        grammar: "root ::= [a-zA-Z ,.']+\"\\n\"",
-        temperature: 0.9,
-    });
+        attackStr += await requestText({
+            prompt: prompt+attackStr,
+            n_predict: 100,
+            grammar: "root ::= [a-zA-Z ,.']+\"\\n\"",
+            temperature: 0.9,
+        });
 
-    let optionalDamageNumbers = attackStr.match(/[Dd]amage/)? "":"?";
-    attackStr += await requestText({
-        prompt: prompt+attackStr,
-        grammar: "root ::= (\"Player \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")" + optionalDamageNumbers + "(\"Enemy \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")?\"\\n\"",
-        temperature: 0.2,
-    });
+        let optionalDamageNumbers = attackStr.match(/[Dd]amage/)? "":"?";
+        attackStr += await requestText({
+            prompt: prompt+attackStr,
+            grammar: "root ::= (\"Player \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")" + optionalDamageNumbers + "(\"Enemy \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")?\"\\n\"",
+            temperature: 0.2,
+        });
 
-    console.log(attackStr);
+        console.log(attackStr);
 
-    return combatEventFromString(attackStr);
+        return combatEventFromString(attackStr) || defaultEnemyAttack;
+    } catch {
+        return defaultEnemyAttack;
+    }
 }
-
+const defaultPlayerAttack = {
+    "who": "Player",
+    "what": "Unknown Attack",
+    "outcome": "Some issue with the LLM probably",
+    "damages": [{
+        "who": "Enemy",
+        "amount": 1,
+    }],
+}
 /**
  * @param {String} what
  * @returns {CombatEvent}
@@ -468,21 +499,25 @@ async function generatePlayerAttack(what) {
 
     attackStr += "Player used " + what + "!\n";
 
-    attackStr += await requestText({
-        prompt: prompt+attackStr,
-        n_predict: 100,
-        grammar: "root ::= [a-zA-Z ,.']+\"\\n\"",
-        temperature: 0.9,
-    });
+    try {
+        attackStr += await requestText({
+            prompt: prompt+attackStr,
+            n_predict: 100,
+            grammar: "root ::= [a-zA-Z ,.']+\"\\n\"",
+            temperature: 0.9,
+        });
 
-    let optionalDamageNumbers = attackStr.match(/[Dd]amage/)? "":"?";
-    attackStr += await requestText({
-        prompt: prompt+attackStr,
-        grammar: "root ::= (\"Enemy \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")" + optionalDamageNumbers + "(\"Player \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")?\"\\n\"",
-        temperature: 0.2,
-    });
+        let optionalDamageNumbers = attackStr.match(/[Dd]amage/)? "":"?";
+        attackStr += await requestText({
+            prompt: prompt+attackStr,
+            grammar: "root ::= (\"Enemy \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")" + optionalDamageNumbers + "(\"Player \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")?\"\\n\"",
+            temperature: 0.2,
+        });
 
-    console.log(attackStr);
+        console.log(attackStr);
 
-    return combatEventFromString(attackStr);
+        return combatEventFromString(attackStr) || defaultPlayerAttack;
+    } catch {
+        return defaultPlayerAttack;
+    }
 }
