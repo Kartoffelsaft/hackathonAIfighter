@@ -1,7 +1,21 @@
+
+// for mistral:
+const INSTRUCTION_PREFIX = "[INST] "
+const RESPONSE_PREFIX = " [\INST]\n"
+
 /**
- * @returns {String}
+// for others:
+const INSTRUCTION_PREFIX = "### Instruction:\n"
+const RESPONSE_PREFIX = "### Response:\n"
+*/
+
+
+/**
+ * @returns {Promise<String>}
  */
 async function requestText(details) {
+    if (details.cache_prompt == undefined) details.cache_prompt = true;
+
     let response = await fetch("http://127.0.0.1:8080/completion", {
         method: 'POST',
         body: JSON.stringify(details)
@@ -16,6 +30,12 @@ async function requestText(details) {
  */
 /**
  * @typedef {Object} Enemy
+ * @property {String} name
+ * @property {String} description
+ * @property {[Ability]} abilities
+ */
+/**
+ * @typedef {Object} PlayerWeapon
  * @property {String} name
  * @property {String} description
  * @property {[Ability]} abilities
@@ -95,6 +115,7 @@ function enemyFromString(str) {
 
     out.abilities = [];
     for (let i = 2; i < lines.length; i++) {
+        if (lines[i].trim().length == 0) break;
         if (!lines[i].startsWith("* ")) {
             console.warn("llm likely not following format: \n"+str);
             continue;
@@ -116,14 +137,17 @@ function enemyFromString(str) {
     return out;
 }
 
+/**
+ * @returns {Promise<Enemy>}
+ */
 async function generateEnemy() {
     let prompt = "";
 
-    prompt += "<s>[INST] The following are several examples of enemies in a dungeon crawler:\n";
-
+    prompt += INSTRUCTION_PREFIX;
+    prompt += "The following are several examples of enemies in a dungeon crawler:\n";
     prompt += enemyExamples.map(enemyToString).join('\n');
-
-    prompt += "\nPlease generate another similar to the above [/INST]\n";
+    prompt += "\nPlease generate another enemy similar to the above";
+    prompt += RESPONSE_PREFIX;
 
     let enemyStr = "";
 
@@ -147,5 +171,94 @@ async function generateEnemy() {
     });
 
     return enemyFromString(enemyStr) || enemyExamples[0];
+}
+
+/** @type {[PlayerWeapon]} */
+let playerWeaponExamples = [
+    {
+        "name": "Dagger",
+        "description": "Short blade that gets the job done.",
+        "abilities": [
+            {
+                "name": "Jab",
+                "effect": "does a small amount of damage",
+            },
+            {
+                "name": "Backstab",
+                "effect": "does a large amount of damage, misses if enemy is aware",
+            },
+        ]
+    },
+    {
+        "name": "Flintlock",
+        "description": "Somewhat clumsy but powerful gunpowder weapon.",
+        "abilities": [
+            {
+                "name": "Shoot",
+                "effect": "does a lot of damage, must be loaded",
+            },
+            {
+                "name": "Reload",
+                "effect": "load the flintlock",
+            },
+        ]
+    },
+    {
+        "name": "Alder's Razor",
+        "description": "Win debates with this one-of-a-kind weapon. Sharper and much more deadly than the traditional Occam's Razor",
+        "abilities": [
+            {
+                "name": "Argue",
+                "effect": "does a lot of damage to enemies of medium intelligence, almost none to low or high. deals fire damage",
+            },
+            {
+                "name": "Shave",
+                "effect": "weakens enemy to elemental damage",
+            },
+            {
+                "name": "Cut",
+                "effect": "does a little bit of damage",
+            },
+        ]
+    }
+];
+
+/**
+ * @returns {Promise<PlayerWeapon>}
+ */
+async function generatePlayerWeapon() {
+    // player weapons happen to basically follow the same format as enemies
+    // so I'm going to call a lot of that code instead of copying&renaming
+
+    let prompt = "";
+
+    prompt += INSTRUCTION_PREFIX;
+    prompt += "The following are several examples of player weapons in a dungeon crawler:\n";
+    prompt += playerWeaponExamples.map(enemyToString).join('\n');
+    prompt += "\nPlease generate another weapon similar to the above";
+    prompt += RESPONSE_PREFIX;
+
+    let playerWeaponStr = "";
+
+    playerWeaponStr += await requestText({
+        prompt: prompt+playerWeaponStr,
+        n_predict: 20,
+        grammar: "root ::= [0-9a-zA-Z ']+\"\\n\"",
+        temperature: 1.4,
+    });
+    console.log("Generating " + playerWeaponStr);
+    playerWeaponStr += await requestText({
+        prompt: prompt+playerWeaponStr,
+        n_predict: 100,
+        grammar: "root ::= [0-9a-zA-Z ,.']+\"\\n\"",
+        temperature: 0.6,
+    });
+    playerWeaponStr += await requestText({
+        prompt: prompt+playerWeaponStr,
+        n_predict: 100,
+        grammar: "root ::= (\"* \"[0-9a-zA-Z ]+\": \"[0-9a-zA-Z ]+\"\\n\")+\"\\n\"",
+    });
+
+    return enemyFromString(playerWeaponStr) || playerWeaponExamples[0];
 }
 
