@@ -398,3 +398,51 @@ async function generateEnemyAttack() {
 
     return gameEventFromString(attackStr);
 }
+
+/**
+ * @param {String} what
+ */
+async function generatePlayerAttack(what) {
+    let isValidAbility = false
+    for (const ability of gamestate.player.weapon.abilities) {
+        if (ability.name.toLowerCase() == what.toLowerCase()) {
+            isValidAbility = true;
+            break;
+        }
+    }
+    if (!isValidAbility) {
+        console.warn(what + " is not an action the player can take");
+        return null;
+    }
+
+    let prompt = "";
+    prompt += INSTRUCTION_PREFIX;
+    prompt += "The following is an example of a combat log:\n";
+    prompt += exampleCombatHistory;
+    prompt += "Here is a log of our current game:\n"
+    prompt += gamestateToString();
+    prompt += "Please generate a possible move for the enemy to make, in the same format as above (move name, description, damage/heal amounts, each on their own line).";
+    prompt += RESPONSE_PREFIX;
+
+    let attackStr = ""
+
+    attackStr += "Player used " + what + "!\n";
+
+    attackStr += await requestText({
+        prompt: prompt+attackStr,
+        n_predict: 100,
+        grammar: "root ::= [a-zA-Z ,.']+\"\\n\"",
+        temperature: 0.9,
+    });
+
+    let optionalDamageNumbers = attackStr.match(/[Dd]amage/)? "":"?";
+    attackStr += await requestText({
+        prompt: prompt+attackStr,
+        grammar: "root ::= (\"Enemy \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")" + optionalDamageNumbers + "(\"Player \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")?\"\\n\"",
+        temperature: 0.2,
+    });
+
+    console.log(attackStr);
+
+    return gameEventFromString(attackStr);
+}
