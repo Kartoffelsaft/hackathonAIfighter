@@ -39,6 +39,13 @@ function addEnemy(name, description) {
   document.getElementById("enemy-description").appendChild(details);
 }
 
+function updateEnemyHealth(newHP) {
+  document.getElementById("enemy-hp").innerHTML = "health: " + newHP + "hp";
+}
+
+function updatePlayerHealth(newHP) {
+  document.getElementById("player-hp").innerHTML = "health: " + newHP + "hp";
+}
 
 /* main */
 printChat("player is using " + gamestate.player.weapon.name + "!\n");
@@ -48,3 +55,6 @@ for(let i = 0; i < gamestate.player.weapon.abilities.length; i++) {
 }
 //add enemy
 addEnemy(gamestate.enemy.what.name, gamestate.enemy.what.description);
+//update health
+updateEnemyHealth(50);
+updatePlayerHealth(100);
