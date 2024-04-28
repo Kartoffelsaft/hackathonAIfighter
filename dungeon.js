@@ -39,12 +39,37 @@ function addEnemy(name, description) {
   document.getElementById("enemy-description").appendChild(details);
 }
 
+/* HEALTH */
 function updateEnemyHealth(newHP) {
   document.getElementById("enemy-hp").innerHTML = "health: " + newHP + "hp";
+  gamestate.enemy.health = newHP;
 }
 
 function updatePlayerHealth(newHP) {
   document.getElementById("player-hp").innerHTML = "health: " + newHP + "hp";
+  gamestate.player.health = newHP;
+}
+
+// Function to update the health bar
+function updateHealthBar(value, elementId) {
+  const healthBar = document.getElementById(elementId);
+  healthBar.innerHTML = "";
+
+  for (let i = 0; i < value; i++) {
+    const heart = document.createElement("div");
+    heart.classList.add("heart");
+    healthBar.appendChild(heart);
+  }
+}
+
+function setHealth(enemyHP, playerHP) {
+  //update health
+  updateEnemyHealth(enemyHP);
+  updatePlayerHealth(playerHP);
+  let playerHealth = gamestate.player.health;
+  let enemyHealth = gamestate.enemy.health;
+  updateHealthBar(playerHealth, "healthBar");
+  updateHealthBar(enemyHealth, "healthBar2");
 }
 
 /* main */
@@ -55,6 +80,6 @@ for(let i = 0; i < gamestate.player.weapon.abilities.length; i++) {
 }
 //add enemy
 addEnemy(gamestate.enemy.what.name, gamestate.enemy.what.description);
-//update health
-updateEnemyHealth(50);
-updatePlayerHealth(100);
+//set health
+setHealth(5, 10);
+setHealth(3, 10);

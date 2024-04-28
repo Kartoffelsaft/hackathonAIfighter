@@ -35,6 +35,25 @@
   visibility: visible;
 }
 
+/* health */
+.health-bar {
+  width: 300px;
+  height: 100px;
+  border: 2px solid #333;
+  border-radius: 25px;
+  overflow: hidden;
+  background-color: #f0f0f0;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.heart {
+  width: 20px;
+  height: 20px;
+  background-image: url('pink-pixel.jpeg'); /* Add your heart image URL here */
+  margin: 5px;
+}
+
 /* id */
 #chatbox-container {
   width: 25%;
