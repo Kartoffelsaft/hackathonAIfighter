@@ -27,6 +27,10 @@
   font-family:'Times New Roman', Times, serif;
   overflow: auto;
   overflow-y: scroll;
+
+  /* flexbox */
+  display: flex;
+  flex-direction: column-reverse;
 }
 
 #fightscreen {
@@ -61,4 +65,14 @@
 
 #player {
   flex: 2 0;
+  height: 75%;
+}
+
+#abilities {
+  height: 25%;
+  
+  /* flexbox */
+  display: flex;
+  justify-content: center;
+  flex: 1 1;
 }
