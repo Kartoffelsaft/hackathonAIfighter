@@ -346,6 +346,22 @@ This creature hisses at you, trying to get you to leave.
 /**
  * @returns {String}
  */
+function getCommandLog() {
+    let out = "";
+    for (item of gamestate.combatHistory) {
+        out += item.who + " used " + item.what + "!\n";
+        out += item.outcome + '\n';
+        for (damage of item.damages) {
+            out += damage.who + " took " + damage.amount + " damage\n";
+        }
+    }
+
+    return out;
+}
+
+/**
+ * @returns {String}
+ */
 function gamestateToString() {
     let out = "";
     for (item of gamestate.combatHistory) {
@@ -521,3 +537,4 @@ async function generatePlayerAttack(what) {
         return defaultPlayerAttack;
     }
 }
+
