@@ -13,12 +13,20 @@ function addAbility(name, effect) {
   let button = document.createElement('button');
   button.innerText = name;
   button.style.cssText = 'flex: 1 1;max-width: 100px;'
+
+  //test
+  let details = document.createElement('span');
+  details.innerText = effect;
+  details.classList.add("tooltiptext");
+  button.classList.add("tooltip");
+
   button.addEventListener('click', () => {
     printChat(effect);
 
     /* Add damage here */
   })
   document.getElementById("abilities").appendChild(button);
+  button.appendChild(details);
 }
 
 /* main */
