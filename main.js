@@ -319,11 +319,11 @@ Player used Rejuvenate!
 You feel refreshed, ready to continue fighting.
 Player healed 3 damage
 
-Snake used Sneak!
-The snake slithers about, into the bushes. You have a hard time seeing it.
+Example Enemy used Sneak!
+The enemy slithers about, into the bushes. You have a hard time seeing it.
 
 Player used Air Blast!
-The snake was unable to avoid the large area of the attack, and is knocked back.
+The example enemy was unable to avoid the large area of the attack, and is knocked back.
 Enemy took 4 damage
 
 Player Health: 13
@@ -336,7 +336,7 @@ This magical staff combines the powers of life and death into one.
 
 Enemy Health: 1
 Enemy info:
-Snake
+Example Enemy
 This creature hisses at you, trying to get you to leave.
 * Sneak: become harder to hit until next attack
 * Venomous Bite: moderate damage
@@ -400,8 +400,9 @@ function combatEventFromString(str) {
         return null;
     }
     
-    out.who = lines[0].split(" used ")[1];
-    out.who = out.who.substring(0, out.who.indexOf("!"));
+    out.who = lines[0].split("used")[0].trim();
+    out.what = lines[0].split("used")[1].trim();
+    out.what = out.what.substring(0, out.what.indexOf("!"));
 
     out.outcome = lines[1].trim();
 
@@ -462,7 +463,10 @@ async function generateEnemyAttack() {
             temperature: 0.9,
         });
 
-        let optionalDamageNumbers = attackStr.match(/[Dd]amage/)? "":"?";
+        let optionalDamageNumbers = (
+            attackStr.match(/[Dd]amage/) || attackStr.match(/[Hh]it/) || attackStr.match(/[Ss]lic/) || attackStr.match(/[Ss]trik/) || attackStr.match(/[Bb]low/) || attackStr.match(/[Ss]wing/)
+
+        )? "":"?";
         attackStr += await requestText({
             prompt: prompt+attackStr,
             grammar: "root ::= (\"Player \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")" + optionalDamageNumbers + "(\"Enemy \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")?\"\\n\"",
@@ -523,7 +527,9 @@ async function generatePlayerAttack(what) {
             temperature: 0.9,
         });
 
-        let optionalDamageNumbers = attackStr.match(/[Dd]amage/)? "":"?";
+        let optionalDamageNumbers = (
+            attackStr.match(/[Dd]amage/) || attackStr.match(/[Hh]it/) || attackStr.match(/[Ss]lic/) || attackStr.match(/[Ss]trik/) || attackStr.match(/[Bb]low/) || attackStr.match(/[Ss]wing/)
+        )? "":"?";
         attackStr += await requestText({
             prompt: prompt+attackStr,
             grammar: "root ::= (\"Enemy \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")" + optionalDamageNumbers + "(\"Player \" (\"took \"|\"healed \") [0-9][0-9]? \" damage\\n\")?\"\\n\"",

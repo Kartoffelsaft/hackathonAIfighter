@@ -51,6 +51,7 @@
   width: 20px;
   height: 20px;
   background-image: url('pink-pixel.jpeg'); /* Add your heart image URL here */
+  background: red;
   margin: 5px;
 }
 

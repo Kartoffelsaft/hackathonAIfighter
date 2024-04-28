@@ -9,6 +9,8 @@ function printChat(str1) {
   scrollToBottom();
 }
 
+let loading = false;
+
 function addAbility(name, effect) {
   let button = document.createElement('button');
   button.innerText = name;
@@ -20,23 +22,60 @@ function addAbility(name, effect) {
   details.classList.add("tooltiptext");
   button.classList.add("tooltip");
 
-  button.addEventListener('click', () => {
-    printChat(effect);
+  button.addEventListener('click', async () => {
+    if (loading) return;
+    loading = true;
+    document.getElementById("loadingindicator").style.visibility = "visible";
 
-    /* Add damage here */
+    let attack = await generatePlayerAttack(name);
+    printChat(attack.who + " used " + attack.what);
+    printChat(attack.outcome);
+    for (damage of attack.damages) {
+        printChat(damage.who + " took " + damage.amount + " damage");
+        gamestate[damage.who.toLowerCase()].health -= damage.amount;
+    }
+    gamestate.combatHistory.push(attack);
+
+    setHealth(gamestate.enemy.health, gamestate.player.health);
+    if (gamestate.enemy.health <= 0) {
+        gamestate.enemy.what = await generateEnemy();
+        gamestate.enemy.health = 5;
+        addEnemy(gamestate.enemy.what.name, gamestate.enemy.what.description);
+        setHealth(gamestate.enemy.health, gamestate.player.health);
+    }
+
+    let enemyattack = await generateEnemyAttack();
+    printChat(enemyattack.who + " used " + enemyattack.what);
+    printChat(enemyattack.outcome);
+    for (damage of enemyattack.damages) {
+        printChat(damage.who + " took " + damage.amount + " damage");
+        gamestate[damage.who.toLowerCase()].health -= damage.amount;
+    }
+    gamestate.combatHistory.push(enemyattack);
+
+    setHealth(gamestate.enemy.health, gamestate.player.health);
+    if (gamestate.enemy.health <= 0) {
+        gamestate.enemy.what = await generateEnemy();
+        gamestate.enemy.health = 5;
+        addEnemy(gamestate.enemy.what.name, gamestate.enemy.what.description);
+        setHealth(gamestate.enemy.health, gamestate.player.health);
+    }
+
+    loading = false;
+    document.getElementById("loadingindicator").style.visibility = "hidden";
   })
   document.getElementById("abilities").appendChild(button);
   button.appendChild(details);
 }
 
 function addEnemy(name, description) {
-  let enemyName = document.createElement('div');
-  enemyName.innerText = name;
-  let details = document.createElement('div');
-  details.innerText = description;
+  //let enemyName = document.createElement('div');
+  //enemyName.innerText = name;
+  //let details = document.createElement('div');
+  //details.innerText = description;
 
-  document.getElementById("enemy-name").appendChild(enemyName);
-  document.getElementById("enemy-description").appendChild(details);
+  document.getElementById("enemy-name").innerHTML = name;
+  document.getElementById("enemy-description").innerHTML = description;
 }
 
 /* HEALTH */
@@ -70,6 +109,9 @@ function setHealth(enemyHP, playerHP) {
   let enemyHealth = gamestate.enemy.health;
   updateHealthBar(playerHealth, "healthBar");
   updateHealthBar(enemyHealth, "healthBar2");
+  if (playerHP <= 0) {
+      printChat("Game Over!");
+  }
 }
 
 /* main */
@@ -83,3 +125,5 @@ addEnemy(gamestate.enemy.what.name, gamestate.enemy.what.description);
 //set health
 setHealth(5, 10);
 setHealth(3, 10);
+
+document.getElementById("loadingindicator").style.visibility = "hidden";
