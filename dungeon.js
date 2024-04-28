@@ -29,8 +29,22 @@ function addAbility(name, effect) {
   button.appendChild(details);
 }
 
+function addEnemy(name, description) {
+  let enemyName = document.createElement('div');
+  enemyName.innerText = name;
+  let details = document.createElement('div');
+  details.innerText = description;
+
+  document.getElementById("enemy-name").appendChild(enemyName);
+  document.getElementById("enemy-description").appendChild(details);
+}
+
+
 /* main */
 printChat("player is using " + gamestate.player.weapon.name + "!\n");
+//add ability
 for(let i = 0; i < gamestate.player.weapon.abilities.length; i++) {
   addAbility(gamestate.player.weapon.abilities[i].name, gamestate.player.weapon.abilities[i].effect);
 }
+//add enemy
+addEnemy(gamestate.enemy.what.name, gamestate.enemy.what.description);
